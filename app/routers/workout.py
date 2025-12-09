@@ -16,6 +16,11 @@ router = APIRouter(prefix="/workouts", tags=["Workout"])
 def create(data: WorkoutBase, db: Session = Depends(get_db)):
     return create_workout(db, data)
 
+@router.get("/", response_model=list[WorkoutResponse])
+def list_workouts(db: Session = Depends(get_db)):
+    from app.crud.workout import get_all_workouts
+    return get_all_workouts(db)
+
 
 @router.get("/{date}", response_model=WorkoutResponse)
 def get(date: str, db: Session = Depends(get_db)):
