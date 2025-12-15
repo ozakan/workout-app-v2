@@ -14,7 +14,11 @@ def create_workout(db: Session, data: WorkoutBase):
     return workout
 
 def get_workout_by_date(db: Session, date: str):
-    return db.query(Workout).filter(Workout.date == date).first()
+    return (
+        db.query(Workout)
+        .filter(Workout.date == date)
+        .first()
+    )
 
 def update_workout(db: Session, workout_id: int, data: WorkoutBase):
     workout = db.query(Workout).filter(Workout.id == workout_id).first()

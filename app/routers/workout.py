@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas.workout import WorkoutBase, WorkoutResponse
 from app.crud.workout import (
+    get_all_workouts,
     create_workout,
     get_workout_by_date,
     update_workout,
@@ -18,7 +19,6 @@ def create(data: WorkoutBase, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=list[WorkoutResponse])
 def list_workouts(db: Session = Depends(get_db)):
-    from app.crud.workout import get_all_workouts
     return get_all_workouts(db)
 
 
