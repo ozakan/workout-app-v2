@@ -7,23 +7,36 @@ from app.crud.exercise import (
     get_exercise,
     get_exercises_by_workout,
     update_exercise,
-    delete_exercise
+    delete_exercise,
 )
+from app.crud.workout import get_workout  # ★追加（親存在チェック用）
 
-router = APIRouter(prefix="/exercises", tags=["Exercise"])
+# --- 子一覧 / 子作成（Workout配下） ---
+router = APIRouter(prefix="/workouts/{workout_id}/exercises", tags=["Exercise"])
 
 
-@router.post("/{workout_id}", response_model=ExerciseResponse)
+@router.post("/", response_model=ExerciseResponse)
 def create(workout_id: int, data: ExerciseBase, db: Session = Depends(get_db)):
+    workout = get_workout(db, workout_id)
+    if workout is None:
+        raise HTTPException(status_code=404, detail="Workout not found")
     return create_exercise(db, workout_id, data)
 
 
-@router.get("/{workout_id}", response_model=list[ExerciseResponse])
+@router.get("/", response_model=list[ExerciseResponse])
 def list_exercises(workout_id: int, db: Session = Depends(get_db)):
+    # 親が無いときに 404 にしたいならここでもチェックしてOK
+    workout = get_workout(db, workout_id)
+    if workout is None:
+        raise HTTPException(status_code=404, detail="Workout not found")
     return get_exercises_by_workout(db, workout_id)
 
 
-@router.patch("/{exercise_id}", response_model=ExerciseResponse)
+# --- 更新 / 削除（ID直） ---
+edit_router = APIRouter(prefix="/exercises", tags=["Exercise"])
+
+
+@edit_router.patch("/{exercise_id}", response_model=ExerciseResponse)
 def update(exercise_id: int, data: ExerciseBase, db: Session = Depends(get_db)):
     exercise = update_exercise(db, exercise_id, data)
     if exercise is None:
@@ -31,7 +44,7 @@ def update(exercise_id: int, data: ExerciseBase, db: Session = Depends(get_db)):
     return exercise
 
 
-@router.delete("/{exercise_id}")
+@edit_router.delete("/{exercise_id}")
 def delete(exercise_id: int, db: Session = Depends(get_db)):
     exercise = delete_exercise(db, exercise_id)
     if exercise is None:

@@ -15,7 +15,10 @@ router = APIRouter(prefix="/workouts", tags=["Workout"])
 
 @router.post("/", response_model=WorkoutResponse)
 def create(data: WorkoutBase, db: Session = Depends(get_db)):
-    return create_workout(db, data)
+    workout = create_workout(db, data)
+    if workout is None:
+        raise HTTPException(status_code=409, detail="Workout date already exists")
+    return workout
 
 @router.get("/", response_model=list[WorkoutResponse])
 def list_workouts(db: Session = Depends(get_db)):
