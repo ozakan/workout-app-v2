@@ -1,69 +1,100 @@
-🏋️ Workout App v2
+# Workout App v2（筋トレ記録アプリ）
 
-筋トレの記録を管理するための フルスタック Web アプリケーション です。
-React（SPA）と FastAPI（REST API）を用いて、
-Workout → Exercise → Set の階層構造でトレーニング内容を管理します。
+FastAPI + SQLAlchemy + React(TypeScript) を用いた、  
+筋トレ内容（Workout / Exercise / Set）を記録・管理するための個人開発アプリです。
 
+バックエンド設計の理解を深めることを目的に、  
+REST API 設計・DB設計・責務分離を意識して実装しています。
 
-🔧 技術スタック
-フロントエンド
-React
-TypeScript
-Vite
-React Router（SPA）
-fetch API
+---
 
-バックエンド
-FastAPI
-SQLAlchemy（ORM）
-SQLite（※ 将来的に PostgreSQL へ移行予定）
+## 技術スタック
 
-🧩 アプリの構成
-Workout（1日分）
- └─ Exercise（種目）
-     └─ Set（重量・回数）
+### Backend
+- FastAPI
+- SQLAlchemy（ORM）
+- SQLite（開発用）
+- Pydantic
 
+### Frontend（予定）
+- React
+- TypeScript
+- Vite
 
-この構造をそのまま REST API とフロントエンドで扱っています。
+---
 
-🚀 現在できていること
-フロントエンド
-SPA 構成（ページ遷移時にリロードなし）
-Workout 一覧 → 詳細画面への遷移
-URL パラメータを用いた詳細表示
-Workout → Exercise → Set の表示ロジック実装
+## 機能概要（MVP）
 
-バックエンド
-SQLAlchemy の relationship を用いたモデル設計
-ネストした JSON を返す REST API
-GET /workouts/{date} による詳細取得
-schemas / crud / routers に分離した設計
+- Workout（日付単位）の作成・取得・更新・削除
+- Workout に紐づく Exercise の管理
+- Exercise に紐づく Set（重量・回数）の管理
+- 親子構造を持つネストJSONの取得
+- 不正な操作に対する適切なステータスコード返却（404 / 409）
 
-🔁 API 例
-GET /workouts/{date}
-{
-  "id": 1,
-  "date": "2025-12-05",
-  "exercises": [
-    {
-      "id": 1,
-      "name": "ベンチプレス",
-      "sets": [
-        { "id": 1, "weight": 80, "reps": 8 }
-      ]
-    }
-  ]
-}
+---
 
-🛣️ 今後の予定
-POST / PATCH / DELETE API の実装（CRUD 完成）
-フロントからの記録追加・編集
-UI 改善（筋トレmemo風）
-コンポーネント分割
-Docker 化
-PostgreSQL 対応
+## API 設計
 
-💡 開発方針
-レイヤ分離
-routers / crud / schemas / models
-実務を意識した設計
+### Workout
+
+| Method | Path | 内容 |
+|------|------|------|
+| POST | `/workouts` | Workout 作成 |
+| GET | `/workouts` | Workout 一覧取得 |
+| GET | `/workouts/{date}` | 日付指定で取得（Exercise / Set を含む） |
+| PATCH | `/workouts/{workout_id}` | Workout 更新 |
+| DELETE | `/workouts/{workout_id}` | Workout 削除 |
+
+※ 同一日付の Workout 作成時は `409 Conflict` を返却
+
+---
+
+### Exercise（Workout 配下）
+
+| Method | Path | 内容 |
+|------|------|------|
+| GET | `/workouts/{workout_id}/exercises` | Exercise 一覧 |
+| POST | `/workouts/{workout_id}/exercises` | Exercise 作成 |
+| PATCH | `/exercises/{exercise_id}` | Exercise 更新 |
+| DELETE | `/exercises/{exercise_id}` | Exercise 削除 |
+
+※ 親 Workout が存在しない場合は `404 Not Found`
+
+---
+
+### Set（Exercise 配下）
+
+| Method | Path | 内容 |
+|------|------|------|
+| GET | `/exercises/{exercise_id}/sets` | Set 一覧 |
+| POST | `/exercises/{exercise_id}/sets` | Set 作成 |
+| PATCH | `/sets/{set_id}` | Set 更新 |
+| DELETE | `/sets/{set_id}` | Set 削除 |
+
+※ 親 Exercise が存在しない場合は `404 Not Found`
+
+---
+
+## 設計の工夫
+
+- **親子関係が分かりやすいURL設計**
+  - 一覧・作成は親リソース配下に配置
+  - 更新・削除はリソースIDで直接操作
+
+- **責務分離**
+  - Router：HTTPリクエスト/レスポンス
+  - CRUD：DB操作
+  - Schema：入出力データ定義
+  - Model：DB構造定義
+
+- **DB整合性の担保**
+  - 親リソース存在チェックによる 404 返却
+  - unique 制約違反時の 409 Conflict
+
+---
+
+## 今後の予定
+
+- 入力バリデーションの追加
+- フロントエンド実装（React）
+- PostgreSQL への移行
