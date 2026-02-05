@@ -7,7 +7,8 @@ from app.crud.workout import (
     create_workout,
     get_workout_by_date,
     update_workout,
-    delete_workout
+    delete_workout,
+    get_workout
 )
 
 router = APIRouter(prefix="/workouts", tags=["Workout"])
@@ -23,6 +24,14 @@ def create(data: WorkoutBase, db: Session = Depends(get_db)):
 @router.get("/", response_model=list[WorkoutResponse])
 def list_workouts(db: Session = Depends(get_db)):
     return get_all_workouts(db)
+
+@router.get("/{workout_id}", response_model=WorkoutResponse)
+def get_by_id(workout_id: int, db: Session = Depends(get_db)):
+    workout = get_workout(db, workout_id)
+    if workout is None:
+        raise HTTPException(status_code=404, detail="Workout not found")
+    return workout
+
 
 
 @router.get("/{date}", response_model=WorkoutResponse)

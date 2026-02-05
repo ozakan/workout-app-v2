@@ -3,9 +3,15 @@ from app.database import engine
 from app.models import Base
 from app.routers import workout, exercise, set
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+@app.get("/")
+def root():
+    return FileResponse("static/index.html")
 # --- DBテーブル作成（初回起動時のみ） ---
 Base.metadata.create_all(bind=engine)
 
