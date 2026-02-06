@@ -1,45 +1,53 @@
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-from app.models import Workout
+from app.models import Workout, User
 from app.schemas.workout import WorkoutBase
 
-def get_all_workouts(db: Session):
-    return db.query(Workout).order_by(Workout.date.desc()).all()
 
-
-def create_workout(db: Session, data: WorkoutBase):
-    workout = Workout(date=data.date)
-    db.add(workout)
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        return None  # ← ここで「重複」として返す
-    db.refresh(workout)
-    return workout
-
-def get_workout_by_date(db: Session, date: str):
+def get_all_workouts(db: Session, current_user: User):
     return (
         db.query(Workout)
-        .filter(Workout.date == date)
+        .filter(Workout.user_id == current_user.id)
+        .order_by(Workout.date.desc())
+        .all()
+    )
+
+
+def get_workout(db: Session, workout_id: int, current_user: User):
+    # 自分のworkoutだけ取得できる
+    return (
+        db.query(Workout)
+        .filter(
+            Workout.id == workout_id,
+            Workout.user_id == current_user.id,
+        )
         .first()
     )
 
-def update_workout(db: Session, workout_id: int, data: WorkoutBase):
-    workout = db.query(Workout).filter(Workout.id == workout_id).first()
-    if workout:
-        workout.date = data.date
-        db.commit()
-        db.refresh(workout)
+
+def create_workout(db: Session, data: WorkoutBase, current_user: User):
+    # 同じユーザーで同じ日付があるかチェック
+    existing = (
+        db.query(Workout)
+        .filter(
+            Workout.user_id == current_user.id,
+            Workout.date == data.date
+        )
+        .first()
+    )
+    if existing:
+        return None
+
+    workout = Workout(date=data.date, user_id=current_user.id)
+    db.add(workout)
+    db.commit()
+    db.refresh(workout)
     return workout
 
-def delete_workout(db: Session, workout_id: int):
-    workout = db.query(Workout).filter(Workout.id == workout_id).first()
+
+def delete_workout(db: Session, workout_id: int, current_user: User):
+    # 自分のworkoutだけ削除できる
+    workout = get_workout(db, workout_id, current_user)
     if workout:
         db.delete(workout)
         db.commit()
     return workout
-
-def get_workout(db: Session, workout_id: int):
-    return db.query(Workout).filter(Workout.id == workout_id).first()
-

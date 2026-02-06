@@ -1,40 +1,28 @@
 // static/js/api.js
-
 function getToken() {
-  return localStorage.getItem("token"); // 後でlogin成功時に保存するやつ
+  return localStorage.getItem("token");
 }
 
-
-async function requestJson(url, options) {
+export async function requestJson(url, options = {}) {
+  const headers = new Headers(options.headers || {});
   const token = getToken();
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
 
-  const mergedOptions = {
-    ...(options ?? {}),
-    headers: {
-      ...(options?.headers ?? {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  };
-
-  const res = await fetch(url, mergedOptions);
-  const text = await res.text(); // 失敗時も見えるように最初は text を取る
+  const res = await fetch(url, { ...options, headers });
+  const text = await res.text();
 
   if (!res.ok) {
     if (res.status === 401) {
-      // トークンが無効/期限切れ/未ログインなど
       localStorage.removeItem("token");
-      // 将来：location.href = "/"; みたいにログインへ飛ばすのもここでできる
+      location.href = "/";
     }
     throw new Error(`HTTP ${res.status}: ${text}`);
   }
 
   if (!text) return null;
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
-  }
+  return JSON.parse(text);
 }
 
 

@@ -11,13 +11,24 @@ function renderList(listEl, items, onDelete) {
     label.textContent = w.date; // ここはシンプルに
     li.appendChild(label);
 
+    // ★ 追加：詳細へ遷移（idがあるときだけ）
+    if (w.id != null) {
+      li.style.cursor = "pointer";
+      li.addEventListener("click", () => {
+        location.href = `/static/workout.html?workout_id=${w.id}`;
+      });
+    }
+
     // idが無いと削除できないので、無い場合はボタンを出さない
     if (w.id != null) {
       const delBtn = document.createElement("button");
       delBtn.textContent = "削除";
       delBtn.style.marginLeft = "8px";
 
-      delBtn.addEventListener("click", () => onDelete(w.id));
+      delBtn.addEventListener("click", (e) => {
+        e.stopPropagation(); // ★ 重要：削除クリックで詳細遷移しない
+        onDelete(w.id);
+      });
       li.appendChild(delBtn);
     }
 
@@ -26,12 +37,22 @@ function renderList(listEl, items, onDelete) {
 }
 
 
+
 export function initWorkoutsPage() {
   const listEl = document.getElementById("list");
-  const loadBtn = document.getElementById("load");
   const addBtn = document.getElementById("add");
   const dateInput = document.getElementById("date");
   const msg = document.getElementById("msg");
+
+  
+  const logoutBtn = document.getElementById("logout");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem("token");
+      location.href = "/";
+    });
+  }
+
 
   async function loadWorkouts() {
     const items = await getWorkouts();
@@ -39,13 +60,9 @@ export function initWorkoutsPage() {
     renderList(listEl, items, handleDelete);
   }
 
-  loadBtn.addEventListener("click", async () => {
-    try {
-      await loadWorkouts();
-    } catch (e) {
-      console.error(e);
-      alert("Load failed: " + e.message);
-    }
+  loadWorkouts().catch((e) => {
+    console.error(e);
+    alert("Load failed: " + e.message);
   });
 
   addBtn.addEventListener("click", async () => {
@@ -82,3 +99,4 @@ export function initWorkoutsPage() {
   }
 
 }
+

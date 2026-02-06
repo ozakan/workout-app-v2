@@ -5,6 +5,9 @@ from app.routers import workout, exercise, set
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from app.routers.auth import router as auth_router
+
+
 
 app = FastAPI()
 
@@ -16,6 +19,7 @@ def root():
 Base.metadata.create_all(bind=engine)
 
 # --- ルーター登録 ---
+app.include_router(auth_router)
 app.include_router(workout.router)
 app.include_router(exercise.router)
 app.include_router(exercise.edit_router)
